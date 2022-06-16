@@ -1,0 +1,6 @@
+{
+    "siteName"            : "https://<yoursite>.atlassian.net",
+    "username"            : "user@example.com",
+    "apiToken"              : "<Atlassian API Token>",
+    "objectSchemaKeys"    : [ "<object schema key1>", "<object schema key2>" ]
+}

@@ -1,0 +1,18 @@
+{
+    "siteName"            : "https://<yoursite>.atlassian.net",
+    "username"            : "user@example.com",
+    "apiToken"            : "<Atlassian API Token>",
+    "folder"              : "<folder where the backup is stored>",
+    "objectSchemas"       : [
+        {
+            "oldObjectSchemaKey"  : "<object schema key1>",
+            "newObjectSchemaKey"  : "<new object schema key1 (may be similar to old)>",
+            "newObjectSchemaName" : "<new object schema name1>"
+        },
+        {
+            "oldObjectSchemaKey"  : "<object schema key2>",
+            "newObjectSchemaKey"  : "<new object schema key2 (may be similar to old)>",
+            "newObjectSchemaName" : "<new object schema name2>"
+        }
+    ]
+}
