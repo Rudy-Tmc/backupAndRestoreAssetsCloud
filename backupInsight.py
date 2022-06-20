@@ -7,7 +7,7 @@ from concurrent.futures import as_completed
 maxThreads = 16
 
 logFileKeep = 10 # Number of days to keep the logfiles, before being rotated
-logFile = os.path.dirname(os.path.abspath(__file__))+"/import.log"
+logFile = os.path.dirname(os.path.abspath(__file__))+"/backup.log"
 
 # Debug level
 fileFormatter = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s [%(lineno)d] %(message)s')

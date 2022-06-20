@@ -411,6 +411,10 @@ try:
                         #     a = future.result()
                         oldObject, newObject = future.result()
                         if newObject:
+                            if 'errorMessages' in newObject:
+                                logging.warning(f"Object '{oldObject.get('label')}'of type '{oldObject['objectType']['name']}' could not be created")
+                                logging.warning(f"")
+                                continue
                             objectIdTranslate[oldObject['id']]=newObject['id']
                             newObjects[newObject['id']]=newObject
 

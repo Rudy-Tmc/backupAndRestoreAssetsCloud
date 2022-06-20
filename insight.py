@@ -547,6 +547,10 @@ class insightConnect():
  
     def getObjectType(self, id):
         logging.debug("getObjectType id:"+str(id))
+        if not id:
+            logging.debug("getObjectType: No argument passed")
+            return None
+        
         query = self.insightUrl+'/v1/objecttype/'+str(id)
         result = self.insightGet(query)
         
@@ -558,12 +562,18 @@ class insightConnect():
 
     def deleteObjectType(self, id):
         logging.debug("deleteObjectType id:"+str(id))
+        if not id:
+            logging.debug("deleteObjectType: No argument passed")
+            return None
         query = self.insightUrl+'/v1/objecttype/'+str(id)
         result = self.insightDelete(query)
         return result if result else None
 
     def createObjectType(self, data):
         logging.debug("createObjectType data:"+str(data))
+        if not data:
+            logging.debug("createObjectType: No argument passed")
+            return None
         query = self.insightUrl+'/v1/objecttype/create'
         result = self.insightPost(query, data)
         return result if result else None
