@@ -285,6 +285,14 @@ class insightConnect():
         result = self.insightGet(query)
         return result if result else None
         
+    def getLabelAttribute(self, objectTypeId):
+        logging.debug(f"getLabelAttribute objectTypeId: {objectTypeId}")
+        attributes = self.getAttributeList(objectTypeId)
+        for attribute in attributes:
+            if attribute.get('label'):
+                return attribute
+        return None
+        
     def getObjects(self, iql, includeExtendedInfo=False, includeAttributes=True, includeAttributesDeep=1):
         logging.debug("getObjects iql:"+urllib.parse.quote_plus(iql)+", includeExtendedInfo:"+(str(includeExtendedInfo))+", includeAttributes:"+(str(includeAttributes))+", includeAttributesDeep:"+(str(includeAttributesDeep)))
         
@@ -655,7 +663,7 @@ class insightConnect():
         for key in myDict:
             value = myDict[key] if str(myDict[key]) != 'nan' else ""
                         
-            attribute = self.getAttributeByName(objectTypeId,key, True)
+            attribute = self.getAttributeByName(objectTypeId, key, True)
             if not attribute:
                 # Attribute could not be found, skip attribute
                 logging.warning("Attribute '"+key+"' could not be found for objectTypeId: "+str(objectTypeId))
@@ -693,20 +701,7 @@ class insightConnect():
                         aggVal = parser.parse(aggVal).replace(tzinfo=tzlocal()).isoformat(timespec='milliseconds')
                 elif attribute['type'] == 1:
                     # The attribute is a reference, find the objectKey of the referenced objects
-                    
-                    # There is a bug in search for iql values with an ampersand '&' so if there is an ampersand we have to 
-                    # use navlist to find the objects, which is NOT the prefered way of retrieving objects
-                    chars = set('&+') # Characters not working with iql REST call: GET /jsm/insight/workspace/{workspaceId}/v1/iql/objects
-                    if any((char in chars) for char in aggVal):
-                        data = {
-                            'objectTypeId': attribute['referenceObjectTypeId'],
-                            'iql': 'label="'+aggVal+'"',
-                            'resultsPerPage': 50,
-                            'objectSchemaId': attribute['objectType']['objectSchemaId']
-                        }
-                        referencedObject = self.getObjectsViaNavlist(data)
-                    else:
-                        referencedObject = self.getObjects('objectTypeId='+str(attribute['referenceObjectTypeId'])+' and label="'+aggVal+'"')
+                    referencedObject = self.getObjects(f"objectId={aggVal}")
     
                     if referencedObject:
                         aggVal = referencedObject[0].get('objectKey')
@@ -819,6 +814,8 @@ class insightConnect():
             attributeValue = []
             for value in attribute['objectAttributeValues']:
                 attributeValue.append(value['displayValue'])
+                if value['referencedType']:
+                    attributeValue.append(value['searchValue'])
             if len(attributeValue)==1:
                 # If only one value, then return value, otherwise return the list of values
                 # Like: ['value1','value2']

@@ -1,9 +1,12 @@
 {
-    "siteName"            : "https://<yoursite>.atlassian.net",
-    "username"            : "user@example.com",
-    "apiToken"            : "<Atlassian API Token>",
-    "folder"              : "<folder where the backup is stored>",
-    "objectSchemas"       : [
+    "siteName"                  : "https://<yoursite>.atlassian.net",
+    "username"                  : "user@example.com",
+    "apiToken"                  : "<Atlassian API Token>",
+    "folder"                    : "<folder where the backup is stored>",
+    "processComments"           : true,
+    "processHistory"            : true,
+    "setAttributeRestrictions"  : true,
+    "objectSchemas"             : [
         {
             "oldObjectSchemaKey"  : "<object schema key1>",
             "newObjectSchemaKey"  : "<new object schema key1 (may be similar to old)>",
