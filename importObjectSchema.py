@@ -129,7 +129,7 @@ def createObjectAttribute(newObjectType, attribute, objectSchemaIdTranslate):
             
             if not referencedObjectSchemaId:
                 # The referenced object schema is not present, skip this attribute
-                logging.warning ("WARNING: The referenced object schem was not found, it might not exists yet.")
+                logging.warning ("WARNING: The referenced object schema was not found, it might not exists yet.")
                 logging.warning (f"   Skipping attribute {attribute['name']} for object {newObjectType['name']}")
                 return None
 
@@ -323,7 +323,8 @@ try:
         newObjectSchema = myInsight.getObjectSchemaByKey(objectSchemaInfo['newObjectSchemaKey'])
         if not newObjectSchema:
             logging.info(f"Create object schema '{objectSchemaInfo['newObjectSchemaName']}'")
-            newObjectSchema = myInsight.createObjectSchema(objectSchemaInfo['newObjectSchemaName'], objectSchemaInfo['newObjectSchemaKey'], objectSchema['description'])
+            description = objectSchema['description'] if objectSchema.get('description') else ""
+            newObjectSchema = myInsight.createObjectSchema(objectSchemaInfo['newObjectSchemaName'], objectSchemaInfo['newObjectSchemaKey'], description)
 
         # Load object schemas translation for referenced objects
         objectSchemaIdTranslate = getObjectSchemaIdTranslation(objectSchemaInfo, folder)
