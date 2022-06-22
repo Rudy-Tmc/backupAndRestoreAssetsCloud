@@ -90,7 +90,10 @@ class insightConnect():
         logging.debug(f"  {json.dumps(data)}")
         try:
             result =  requests.post(query, json=data, headers=self.headers)
-            return result.json()
+            if result.text != '':
+                return result.json()
+            else: 
+                return None
         except Exception as e:
             logging.exception(e)
             return None
@@ -639,6 +642,15 @@ class insightConnect():
         result = self.insightPut(query,data)
         return result if result else None
 
+    def moveObjectTypeAttribute(self,objectTypeId, id, position):
+        logging.debug(f"moveObjectTypeAttribute objectTypeId:{objectTypeId}, id:{id}, position: {position}")
+        query = f"{self.insightUrl}/v1/objecttypeattribute/{objectTypeId}/{id}/move"
+        data = {
+            "position": position
+        }
+        result = self.insightPost(query,data)
+        return result if result else None
+        
     def deleteObjectTypeAttribute(self, id):
         logging.debug("deleteObjectTypeAttribute id:"+str(id))
         query = self.insightUrl+'/v1/objecttypeattribute/'+str(id)

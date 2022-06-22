@@ -1,3 +1,4 @@
+from turtle import position
 from insight import insightConnect
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import os, logging, logging.handlers, re, insight
@@ -154,8 +155,122 @@ def createObjectAttribute(newObjectType, attribute, objectSchemaIdTranslate):
 
         logging.info(f"Create object type attribute '{attribute['name']}' [{attribute['id']}] for object {newObjectType['name']} [{newObjectType['id']}]")
         newAttribute = myInsight.createObjectTypeAttribute(newObjectType['id'], data)
-    
+
     return [attribute, newAttribute]
+def updateAttributeType(newObjectType, attribute, attributeIdTranslate):
+    # add restrictions to attributes, like cardinality, regex
+                    
+    # Create attribute in objecttype 
+    logging.info("updateAttributeType > Updating attribute: "+attribute['name'])
+    newAttributeId = attributeIdTranslate.get(attribute['id'])
+    data={}
+    match attribute['type']:
+        case 0: # Default
+            logging.debug("updateAttributeType > Default")
+            data['defaultTypeId'] = attribute['defaultType']['id']
+            match attribute['defaultType']['id']:
+                # See https://developer.atlassian.com/cloud/insight/rest/api-group-objecttypeattribute
+                case -1: # None
+                    logging.debug("updateAttributeType > defaultTypeId=-1")
+                case  0: # Text
+                    logging.debug("updateAttributeType > defaultTypeId=0")
+                    if 'regexValidation' in attribute:
+                        data['regexValidation'] = attribute['regexValidation']
+                case  1: # Integer
+                    logging.debug("updateAttributeType > defaultTypeId=1")
+                    if 'suffix' in attribute:
+                        data['suffix'] = attribute['suffix']
+                    if 'summable' in attribute:
+                        data['summable'] = attribute['summable']
+                case  2: # Boolean
+                    logging.debug("updateAttributeType > defaultTypeId=2")
+                case  3: # Double
+                    logging.debug("updateAttributeType > defaultTypeId=3")
+                    if 'suffix' in attribute:
+                        data['suffix'] = attribute['suffix']
+                    if 'summable' in attribute:
+                        data['summable'] = attribute['summable']
+                case  4: # Date
+                    logging.debug("updateAttributeType > defaultTypeId=4")
+                case  5: # Time
+                    logging.debug("updateAttributeType > defaultTypeId=5")
+                case  6: # DateTime
+                    logging.debug("updateAttributeType > defaultTypeId=6")
+                case  7: # Url
+                    logging.debug("updateAttributeType > defaultTypeId=7")
+                    if 'additionalValue' in attribute:
+                        data['additionalValue'] = attribute['additionalValue']
+                case  8: # Email
+                    logging.debug("updateAttributeType > defaultTypeId=8")
+                    if 'minimumCardinality' in attribute:
+                        data['minimumCardinality'] = attribute['minimumCardinality']
+                    if 'maximumCardinality' in attribute:
+                        data['maximumCardinality'] = attribute['maximumCardinality']
+                    if 'regexValidation' in attribute:
+                        data['regexValidation'] = attribute['regexValidation']
+                case  9: # TextArea
+                    logging.debug("updateAttributeType > defaultTypeId=9")
+                case 10: # Select
+                    logging.debug("updateAttributeType > defaultTypeId=10")
+                    data['options'] = attribute['options']
+                    if 'minimumCardinality' in attribute:
+                        data['minimumCardinality'] = attribute['minimumCardinality']
+                    if 'maximumCardinality' in attribute:
+                        data['maximumCardinality'] = attribute['maximumCardinality']
+                case 11: # IP Address
+                    logging.debug("updateAttributeType > defaultTypeId=11")
+                case _:
+                    logging.error("updateAttributeType > Invalid defaultTypeId: "+str(attribute['defaultType']['id'])+" detected")
+                    exit(-1)                                
+        case 1: # Object Reference
+            logging.debug("updateAttributeType > Object Reference")
+            # data['typeValue'] = objectTypeIdTranslate[attribute['referenceObjectTypeId']]
+            # data['additionalValue'] = myInsight.getReferenceTypeByName(attribute['referenceType']['name']))['id']
+            if 'includeChildObjectTypes' in attribute:
+                data['includeChildObjectTypes'] = attribute['includeChildObjectTypes']
+            if 'iql' in attribute:
+                data['iql'] = attribute['iql']
+            if 'minimumCardinality' in attribute:
+                data['minimumCardinality'] = attribute['minimumCardinality']
+            if 'maximumCardinality' in attribute:
+                data['maximumCardinality'] = attribute['maximumCardinality']
+        case 2: # User
+            logging.debug("updateAttributeType > User")
+            if 'typeValueMulti' in attribute:
+                valueMultiTranslated = []
+                for value in attribute['typeValueMulti']:
+                    valueMultiTranslated.append(value)
+                data['typeValueMulti'] = valueMultiTranslated
+            if 'additionalValue' in attribute:
+                data['additionalValue'] = attribute['additionalValue']
+            if 'minimumCardinality' in attribute:
+                data['minimumCardinality'] = attribute['minimumCardinality']
+            if 'maximumCardinality' in attribute:
+                data['maximumCardinality'] = attribute['maximumCardinality']
+        case 4: # Group
+            logging.debug("updateAttributeType > Group")
+            if 'minimumCardinality' in attribute:
+                data['minimumCardinality'] = attribute['minimumCardinality']
+            if 'maximumCardinality' in attribute:
+                data['maximumCardinality'] = attribute['maximumCardinality']
+        case 7: # Status
+            logging.debug("updateAttributeType > Status")
+            if 'typeValueMulti' in attribute:
+                valueMultiTranslated = []
+                for value in attribute['typeValueMulti']:
+                    valueMultiTranslated.append(statusTypeIdTranslate[value])
+                data['typeValueMulti'] = valueMultiTranslated
+        case _:
+            # See https://developer.atlassian.com/cloud/insight/rest/api-group-objecttypeattribute
+            logging.error("updateAttributeType > Invalid attribute type: "+str(attribute['type'])+" detected")
+            exit(-1)
+    updatedObjectTypeAttribute = myInsight.updateObjectTypeAttribute(newObjectType['id'], newAttributeId, data)
+    if not updatedObjectTypeAttribute:
+        logging.warning("FAILED: updateAttributeType > attributeId: "+str(newAttributeId))
+    else:
+        logging.info("updateAttributeType > Updated attributeId: "+str(newAttributeId))
+    
+    return updatedObjectTypeAttribute
 
 def addComment(filename, translate):
     if not filename.endswith('.json'):
@@ -401,8 +516,7 @@ try:
         newObjectTypes = myInsight.getObjectTypes(newObjectSchema['id'], False, True)
         newObjectTypes.sort(key=lambda x: x['id']) # Sort the object types list
         attributeIdTranslate={}
-        newAttributes={}
-
+        
         for newObjectType in newObjectTypes:
             # Create attributes for object type
             oldOjbectTypeId = ''
@@ -417,7 +531,7 @@ try:
             jsonfile = jsonfile.replace(" ", '_')      
         
             attributes = insight.loadJson(jsonfile)
-
+            newAttributes=[]
             # start the thread pool
             with ThreadPoolExecutor(maxThreads) as executor:
                 # submit tasks and collect futures
@@ -429,8 +543,14 @@ try:
                         attribute, newAttribute = future.result()
                         if newAttribute:
                             attributeIdTranslate[attribute['id']]=newAttribute['id']
-                            newAttributes[newAttribute['id']]=newAttribute
-
+                            newAttributes.append(newAttribute)
+                          
+            # set the correct position of the attribute
+            newAttributesList = sorted(newAttributes, key=lambda d: (d['position'] * -1)) 
+            for attribute in newAttributesList:
+                logging.info(f"  Attribute {attribute['name']} set to position {attribute['position']} for {newObjectType['name']}")    
+                myInsight.moveObjectTypeAttribute(newObjectType['id'], attribute['id'], attribute['position'])
+            logging.info(f"Attributes ordered for {newObjectType['name']}")
 
         # - create objects without attributes (only labels)
         # This is done to be able to refer to objects in attributes.
@@ -519,118 +639,12 @@ try:
                 jsonfile = jsonfile.replace(" ", '_')      
             
                 attributes = insight.loadJson(jsonfile)
-                for attribute in attributes:
-                # add restrictions to attributes, like cardinality, regex
-                    
-                    # Create attribute in objecttype 
-                    logging.info("updateAttributeType > Updating attribute: "+attribute['name'])
-                    newAttributeId = attributeIdTranslate.get(attribute['id'])
-                    data={}
-                    match attribute['type']:
-                        case 0: # Default
-                            logging.debug("updateAttributeType > Default")
-                            data['defaultTypeId'] = attribute['defaultType']['id']
-                            match attribute['defaultType']['id']:
-                                # See https://developer.atlassian.com/cloud/insight/rest/api-group-objecttypeattribute
-                                case -1: # None
-                                    logging.debug("updateAttributeType > defaultTypeId=-1")
-                                case  0: # Text
-                                    logging.debug("updateAttributeType > defaultTypeId=0")
-                                    if 'regexValidation' in attribute:
-                                        data['regexValidation'] = attribute['regexValidation']
-                                case  1: # Integer
-                                    logging.debug("updateAttributeType > defaultTypeId=1")
-                                    if 'suffix' in attribute:
-                                        data['suffix'] = attribute['suffix']
-                                    if 'summable' in attribute:
-                                        data['summable'] = attribute['summable']
-                                case  2: # Boolean
-                                    logging.debug("updateAttributeType > defaultTypeId=2")
-                                case  3: # Double
-                                    logging.debug("updateAttributeType > defaultTypeId=3")
-                                    if 'suffix' in attribute:
-                                        data['suffix'] = attribute['suffix']
-                                    if 'summable' in attribute:
-                                        data['summable'] = attribute['summable']
-                                case  4: # Date
-                                    logging.debug("updateAttributeType > defaultTypeId=4")
-                                case  5: # Time
-                                    logging.debug("updateAttributeType > defaultTypeId=5")
-                                case  6: # DateTime
-                                    logging.debug("updateAttributeType > defaultTypeId=6")
-                                case  7: # Url
-                                    logging.debug("updateAttributeType > defaultTypeId=7")
-                                    if 'additionalValue' in attribute:
-                                        data['additionalValue'] = attribute['additionalValue']
-                                case  8: # Email
-                                    logging.debug("updateAttributeType > defaultTypeId=8")
-                                    if 'minimumCardinality' in attribute:
-                                        data['minimumCardinality'] = attribute['minimumCardinality']
-                                    if 'maximumCardinality' in attribute:
-                                        data['maximumCardinality'] = attribute['maximumCardinality']
-                                    if 'regexValidation' in attribute:
-                                        data['regexValidation'] = attribute['regexValidation']
-                                case  9: # TextArea
-                                    logging.debug("updateAttributeType > defaultTypeId=9")
-                                case 10: # Select
-                                    logging.debug("updateAttributeType > defaultTypeId=10")
-                                    data['options'] = attribute['options']
-                                    if 'minimumCardinality' in attribute:
-                                        data['minimumCardinality'] = attribute['minimumCardinality']
-                                    if 'maximumCardinality' in attribute:
-                                        data['maximumCardinality'] = attribute['maximumCardinality']
-                                case 11: # IP Address
-                                    logging.debug("updateAttributeType > defaultTypeId=11")
-                                case _:
-                                    logging.error("updateAttributeType > Invalid defaultTypeId: "+str(attribute['defaultType']['id'])+" detected")
-                                    exit(-1)                                
-                        case 1: # Object Reference
-                            logging.debug("updateAttributeType > Object Reference")
-                            # data['typeValue'] = objectTypeIdTranslate[attribute['referenceObjectTypeId']]
-                            # data['additionalValue'] = myInsight.getReferenceTypeByName(attribute['referenceType']['name']))['id']
-                            if 'includeChildObjectTypes' in attribute:
-                                data['includeChildObjectTypes'] = attribute['includeChildObjectTypes']
-                            if 'iql' in attribute:
-                                data['iql'] = attribute['iql']
-                            if 'minimumCardinality' in attribute:
-                                data['minimumCardinality'] = attribute['minimumCardinality']
-                            if 'maximumCardinality' in attribute:
-                                data['maximumCardinality'] = attribute['maximumCardinality']
-                        case 2: # User
-                            logging.debug("updateAttributeType > User")
-                            if 'typeValueMulti' in attribute:
-                                valueMultiTranslated = []
-                                for value in attribute['typeValueMulti']:
-                                    valueMultiTranslated.append(value)
-                                data['typeValueMulti'] = valueMultiTranslated
-                            if 'additionalValue' in attribute:
-                                data['additionalValue'] = attribute['additionalValue']
-                            if 'minimumCardinality' in attribute:
-                                data['minimumCardinality'] = attribute['minimumCardinality']
-                            if 'maximumCardinality' in attribute:
-                                data['maximumCardinality'] = attribute['maximumCardinality']
-                        case 4: # Group
-                            logging.debug("updateAttributeType > Group")
-                            if 'minimumCardinality' in attribute:
-                                data['minimumCardinality'] = attribute['minimumCardinality']
-                            if 'maximumCardinality' in attribute:
-                                data['maximumCardinality'] = attribute['maximumCardinality']
-                        case 7: # Status
-                            logging.debug("updateAttributeType > Status")
-                            if 'typeValueMulti' in attribute:
-                                valueMultiTranslated = []
-                                for value in attribute['typeValueMulti']:
-                                    valueMultiTranslated.append(statusTypeIdTranslate[value])
-                                data['typeValueMulti'] = valueMultiTranslated
-                        case _:
-                            # See https://developer.atlassian.com/cloud/insight/rest/api-group-objecttypeattribute
-                            logging.error("updateAttributeType > Invalid attribute type: "+str(attribute['type'])+" detected")
-                            exit(-1)
-                    updatedObjectTypeAttribute = myInsight.updateObjectTypeAttribute(newObjectType['id'], newAttributeId, data)
-                    if not updatedObjectTypeAttribute:
-                        logging.warning("FAILED: updateAttributeType > attributeId: "+str(newAttributeId))
-                    else:
-                        logging.info("updateAttributeType > Updated attributeId: "+str(newAttributeId))
+                with ThreadPoolExecutor(maxThreads) as executor:
+                    futures = [executor.submit(updateAttributeType, newObjectType, attribute, attributeIdTranslate) for attribute in attributes]
+                    # process task results as they are available
+                    for future in as_completed(futures):
+                        updatedAttribute = future.result()
+                        logging.info(f"Attribute {updatedAttribute.get('name')} updated")
 
 except KeyboardInterrupt:
     # handle Ctrl-C
