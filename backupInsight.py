@@ -153,7 +153,9 @@ try:
                     if objectComment:
                         insight.saveAsJson(objectComment,objectComment[0]['objectId'], backupLocation+"/objects/comments")
             logging.info(f"        - comments")
-
+    
+    # Zip the backup
+    insight.zipDir(backupLocationPrefix, f"insight-backup-{timeString}.zip")
 except KeyboardInterrupt:
     # handle Ctrl-C
     logging.warn("Cancelled by user")
