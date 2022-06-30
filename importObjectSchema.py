@@ -429,7 +429,11 @@ try:
                 # The status type does not exists
                 logging.info(f"Create global status type '{statusType['name']}'")
                 newStatusType = myInsight.createStatusType(statusType['name'], statusType['category'], statusType['description'])
-            statusTypeIdTranslate[statusType['id']]=newStatusType['id']
+                if newStatusType:
+                    statusTypeIdTranslate[statusType['id']]=newStatusType['id']
+            else:
+                logging.info(f"Found existing global status type '{statusType['name']}'")
+                statusTypeIdTranslate[statusType['id']]=newStatusType['id']
             
         # Load object schema
         objectSchema = insight.loadJson(importDataPath+'/config/objectschema.json')
