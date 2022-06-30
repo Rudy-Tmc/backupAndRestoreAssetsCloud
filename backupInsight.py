@@ -58,15 +58,21 @@ try:
     else:
         for objectSchemaKey in objectSchemaKeys:
             objectSchema = myInsight.getObjectSchemaByKey(objectSchemaKey)
-            objectSchemas.append(objectSchema)
-        
+            if not objectSchema:
+                logging.info(f"WARNING: Could not find object schema for key: '{objectSchemaKey}'")
+                continue
+            else:
+                objectSchemas.append(objectSchema)
+    if len(objectSchemas) == 0:
+        logging.info(f"ERROR: No (valid) object schema's found to backup")
+        exit(1)
     backupLocationPrefix = os.path.dirname(os.path.realpath(__file__))+"/"+timeString
 
     # Backup object schema's
     insight.saveAsJson(objectSchemas,"objectschemas", backupLocationPrefix+"/config")
 
     logging.info("Start backup of:")
-    for objectSchema in objectSchemas:    
+    for objectSchema in objectSchemas: 
         logging.info(f"   {objectSchema['name']} [{objectSchema['objectSchemaKey']}]")
         backupLocation = backupLocationPrefix+"/"+objectSchema['objectSchemaKey']
         
