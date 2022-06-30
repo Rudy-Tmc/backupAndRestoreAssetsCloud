@@ -6,6 +6,14 @@ Since Jira Insight is integrated with Jira Service Management Premium there has 
 
 The backupInsight.py script will create a set of files which are used by the importObjectSchema.py script. With the config files you can manage which objectschema's need to be in the backup and which need to be restored.
 
+## Prerequisites
+
+Make sure that you install the following modules:
+* requests
+* python-dateutil
+
+This can be done with `pip install <module name>` or `python -m pip install <module name>`
+
 ## Backup
 Before you start the first backup make sure you have an account with the propper permissions and an API token (https://id.atlassian.com/manage-profile/security/api-tokens)
 Next you need to adjust the file backupInsight-config.json. The template looks like this:
