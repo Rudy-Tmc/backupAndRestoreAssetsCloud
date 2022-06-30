@@ -8,6 +8,7 @@ The backupInsight.py script will create a set of files which are used by the imp
 
 ## Prerequisites
 
+These script are created and tested with Python 3.10.2.
 Make sure that you install the following modules:
 * requests
 * python-dateutil
