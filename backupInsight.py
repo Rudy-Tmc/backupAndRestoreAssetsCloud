@@ -80,7 +80,12 @@ try:
         # - object schema
         insight.saveAsJson(objectSchema,"objectschema", backupLocation+"/config")
         logging.info("   - objectschema")
-
+        
+        # - object schema properties
+        objectSchemaProperties = myInsight.getObjectSchemaProperties(objectSchema['id'])
+        insight.saveAsJson(objectSchemaProperties,"objectschema_properties", backupLocation+"/config")
+        logging.info("   - object schema properties")
+        
         # - global reference types
         referenceTypes = myInsight.getGlobalReferenceTypes()
         insight.saveAsJson(referenceTypes,"global_referencetypes", backupLocation+"/config")

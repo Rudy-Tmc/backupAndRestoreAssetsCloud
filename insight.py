@@ -521,6 +521,29 @@ class insightConnect():
         result = self.insightGet(url)
         return result if result else None
 
+    def getObjectSchemaProperties(self, id):
+        logging.debug(f"getObjectSchemaProperties id: {id}")
+        query = f"{self.insightUrl}/v1/global/config/objectschema/{id}/property"
+        result = self.insightGet(query)
+        return result if result else None
+
+    def updateObjectSchemaProperties(self, id, allowOtherObjectSchema, createObjectsCustomField, quickCreateObjects, serviceDescCustomersEnabled, validateQuickCreate):
+        logging.debug( f"updateObjectSchemaProperties id: {id}, allowOtherObjectSchema = {allowOtherObjectSchema}, createObjectsCustomField = {createObjectsCustomField}, quickCreateObjects = {quickCreateObjects}, serviceDescCustomersEnabled = {serviceDescCustomersEnabled}, validateQuickCreate = {validateQuickCreate}")
+        data = {}
+        if allowOtherObjectSchema is not None:
+            data['allowOtherObjectSchema'] = allowOtherObjectSchema
+        if createObjectsCustomField is not None:
+            data['createObjectsCustomField'] = createObjectsCustomField
+        if quickCreateObjects is not None:
+            data['quickCreateObjects'] = quickCreateObjects
+        if serviceDescCustomersEnabled is not None:
+            data['serviceDescCustomersEnabled'] = serviceDescCustomersEnabled
+        if validateQuickCreate is not None:
+            data['validateQuickCreate'] = validateQuickCreate
+        query = f"{self.insightUrl}/v1/global/config/objectschema/{id}/property"
+        result = self.insightPost(query, data)
+        return result if result else None
+
     def getObjectTypes (self, objectSchemaId, includeObjectCounts=False, reload=False):
         logging.debug("getObjectSchemaAttributes objectSchemaId:"+str(objectSchemaId)+", includeObjectCounts:"+(str(includeObjectCounts))+", reload:"+(str(reload)))
         if self.objectTypes.get(objectSchemaId) and not reload:

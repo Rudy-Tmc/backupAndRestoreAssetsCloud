@@ -448,6 +448,12 @@ try:
         # Load object schemas translation for referenced objects
         objectSchemaIdTranslate = getObjectSchemaIdTranslation(objectSchemaInfo, folder)
 
+        # Load object schema properties
+        objectSchemaProperties = insight.loadJson(importDataPath+'/config/objectschema_properties.json')
+        if objectSchemaProperties:
+            logging.info(f"Set object schema properties")
+            myInsight.updateObjectSchemaProperties(newObjectSchema['id'], objectSchemaProperties['allowOtherObjectSchema'],objectSchemaProperties['createObjectsCustomField'],objectSchemaProperties['quickCreateObjects'],objectSchemaProperties['serviceDescCustomersEnabled'],objectSchemaProperties['validateQuickCreate'])
+
         # - create schema reference types
         referenceTypes = insight.loadJson(importDataPath+'/config/referencetypes.json')
         for referenceType in referenceTypes:
