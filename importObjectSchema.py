@@ -59,9 +59,11 @@ def updateObjectByObjectTypeId(updateObjectId, updateObjectTypeId, objectData):
     newObjectData = {}
     for key in objectData:
         if key in referenceAttributeNames:
-            [displayValue,searchValue] = objectData[key]
-            searchValue = searchValue.split("-",1)[1] 
-            newObjectData[key] = objectIdTranslate[searchValue]
+            allrefValues = []
+            for refValue in objectData[key]:
+                # Iterate through all referenced objects
+                allrefValues.append(objectIdTranslate[refValue['searchValue'].split("-",1)[1]]) 
+            newObjectData[key] = allrefValues
         else:
             newObjectData[key] = objectData[key]
 
@@ -71,26 +73,6 @@ def updateObjectByObjectTypeId(updateObjectId, updateObjectTypeId, objectData):
     return updatedObject
 
 def createObject(newObjectTypeId, object):
-    # label = object['label']
-    
-    # chars = set('&+') # Characters not working with iql REST call: GET /jsm/insight/workspace/{workspaceId}/v1/iql/objects
-    # if any((char in chars) for char in label):
-    #     # There is a bug in search for iql values with an ampersand '&' so if there is an ampersand we have to 
-    #     # use navlist to find the objects, which is NOT the prefered way of retrieving objects
-    #     data = {
-    #         'objectTypeId': newObjectTypeId,
-    #         'iql': f'label="{label}"',
-    #         'objectSchemaId': objectSchemaIdTranslate[object['objectType']['objectSchemaId']],
-    #         'resultsPerPage': 50
-    #     }
-    #     findObject = myInsight.getObjectsViaNavlist(data)
-    # else:
-    #     iql = f'objecttypeid={newObjectTypeId} and label="{label}"'
-    #     findObject = myInsight.getObjects(iql)
-    # if not findObject or len(findObject)==0:
-    #     data = {
-    #         'Name': object['name']
-    #     }
     newObject = None
     if object['id'] in objectIdTranslate:
         iql = f'objectId="{objectIdTranslate[object["id"]]}"'

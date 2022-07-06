@@ -848,13 +848,17 @@ class insightConnect():
             attributeName = attribute['objectTypeAttribute']['name']
             attributeValue = []
             for value in attribute['objectAttributeValues']:
-                attributeValue.append(value['displayValue'])
                 if value['referencedType']:
-                    attributeValue.append(value['searchValue'])
-            if len(attributeValue)==1:
-                # If only one value, then return value, otherwise return the list of values
-                # Like: ['value1','value2']
-                attributeValue = attributeValue[0]
+                    refValue = {}
+                    refValue['displayValue'] = value['displayValue']
+                    refValue['searchValue'] = value['searchValue']
+                    attributeValue.append(refValue)
+                else: 
+                    attributeValue.append(value['displayValue'])
+                    if len(attributeValue)==1:
+                        # If only one value, then return value, otherwise return the list of values
+                        # Like: ['value1','value2']
+                        attributeValue = attributeValue[0]
             objectData[attributeName]=attributeValue
         
         return objectData
