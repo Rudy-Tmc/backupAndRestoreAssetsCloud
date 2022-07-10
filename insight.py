@@ -842,12 +842,14 @@ class insightConnect():
         return result['values'] if result else None
     
     def getObjectData(self, object):
+        logging.debug(f"insight > getObjectData > object: {object['name']} [{object['id']}]")
         objectData = {}
         objectAttributes = self.getObjectAttributes(object['id'])
         for attribute in objectAttributes:
             attributeName = attribute['objectTypeAttribute']['name']
             attributeValue = []
             for value in attribute['objectAttributeValues']:
+                logging.debug(f"insight > getObjectData > value: {value}")
                 if value['referencedType']:
                     refValue = {}
                     refValue['displayValue'] = value['displayValue']
@@ -855,10 +857,11 @@ class insightConnect():
                     attributeValue.append(refValue)
                 else: 
                     attributeValue.append(value['displayValue'])
-                    if len(attributeValue)==1:
-                        # If only one value, then return value, otherwise return the list of values
-                        # Like: ['value1','value2']
-                        attributeValue = attributeValue[0]
+            if len(attributeValue)==1:
+                # If only one value, then return value, otherwise return the list of values
+                # Like: ['value1','value2']
+                attributeValue = attributeValue[0]
+            logging.debug(f"insight > getObjectData > attributeValue: {attributeValue}")
             objectData[attributeName]=attributeValue
         
         return objectData
