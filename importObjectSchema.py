@@ -60,9 +60,14 @@ def updateObjectByObjectTypeId(updateObjectId, updateObjectTypeId, objectData):
     for key in objectData:
         if key in referenceAttributeNames:
             allrefValues = []
-            for refValue in objectData[key]:
-                # Iterate through all referenced objects
-                allrefValues.append(objectIdTranslate[refValue['searchValue'].split("-",1)[1]]) 
+            if isinstance(objectData[key], list):
+                # When we have a reference list
+                for refValue in objectData[key]:
+                    # Iterate through all referenced objects
+                    allrefValues.append(objectIdTranslate[refValue['searchValue'].split("-",1)[1]]) 
+            else:
+                # There is only one reference
+                allrefValues.append(objectIdTranslate[objectData[key]['searchValue'].split("-",1)[1]])
             newObjectData[key] = allrefValues
         else:
             newObjectData[key] = objectData[key]
