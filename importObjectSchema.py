@@ -119,7 +119,7 @@ def createObjectAttribute(newObjectType, attribute, objectSchemaIdTranslate):
                 # The referenced object schema is not present, skip this attribute
                 logging.warning ("WARNING: The referenced object schema was not found, it might not exists yet.")
                 logging.warning (f"   Skipping attribute {attribute['name']} for object {newObjectType['name']}")
-                return None
+                return [attribute, None]
 
             # Get the translation of the parent object id of the reference object type
             parentOTid = None
@@ -132,7 +132,7 @@ def createObjectAttribute(newObjectType, attribute, objectSchemaIdTranslate):
             if not referenceObjectType:
                 logging.warning ("WARNING: The referenced object was not found, it might not exists yet.")
                 logging.warning (f"   Skipping attribute {attribute['name']} for object {newObjectType['name']}")
-                return None
+                return [attribute, None]
                 
             if referenceObjectType:
                 data['typeValue'] = referenceObjectType['id']
