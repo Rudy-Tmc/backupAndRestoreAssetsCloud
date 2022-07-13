@@ -64,10 +64,20 @@ def updateObjectByObjectTypeId(updateObjectId, updateObjectTypeId, objectData):
                 # When we have a reference list
                 for refValue in objectData[key]:
                     # Iterate through all referenced objects
-                    allrefValues.append(objectIdTranslate[refValue['searchValue'].split("-",1)[1]]) 
+                    translatedObjectId = objectIdTranslate.get(refValue['searchValue'].split("-",1)[1])
+                    if translatedObjectId:
+                        # only add id if we've found the translated object id
+                        allrefValues.append(translatedObjectId)
+                    else:
+                        logging.info(f"WARNING: updateObjectByObjectTypeId > Could not find reference object '{refValue['displayValue']} [{refValue['searchValue']}]' for object id {updateObjectId}")
             else:
                 # There is only one reference
-                allrefValues.append(objectIdTranslate[objectData[key]['searchValue'].split("-",1)[1]])
+                translatedObjectId = objectIdTranslate.get(objectData[key]['searchValue'].split("-",1)[1])
+                if translatedObjectId:
+                    # only add id if we've found the translated object id
+                    allrefValues.append(translatedObjectId) 
+                else:
+                    logging.info(f"WARNING: updateObjectByObjectTypeId > Could not find reference object '{objectData[key]['displayValue']} [{objectData[key]['searchValue']}]' for object id {updateObjectId}")
             newObjectData[key] = allrefValues
         else:
             newObjectData[key] = objectData[key]
@@ -114,13 +124,11 @@ def createObjectAttribute(newObjectType, attribute, objectSchemaIdTranslate):
         if attribute['type'] == 1: # Object reference type
             # Translate the reference object schema id, it might be another object schema
             referencedObjectSchemaId = objectSchemaIdTranslate.get(attribute['referenceObjectType']['objectSchemaId'])
-            
             if not referencedObjectSchemaId:
-                # The referenced object schema is not present, skip this attribute
-                logging.warning ("WARNING: The referenced object schema was not found, it might not exists yet.")
+                logging.warning ("WARNING: The referenced object schema id was not found, it might not exists yet.")
                 logging.warning (f"   Skipping attribute {attribute['name']} for object {newObjectType['name']}")
                 return [attribute, None]
-
+            
             # Get the translation of the parent object id of the reference object type
             parentOTid = None
             if attribute['referenceObjectType'].get('parentObjectTypeId'):
@@ -529,6 +537,15 @@ try:
         
             attributes = insight.loadJson(jsonfile)
             newAttributes=[]
+
+            # Not threaded for debugging
+            # for attribute in attributes:
+            #     attribute, newAttribute = createObjectAttribute(newObjectType, attribute, objectSchemaIdTranslate)
+                
+            #     if newAttribute:
+            #         attributeIdTranslate[attribute['id']]=newAttribute['id']
+            #         newAttributes.append(newAttribute)
+
             # start the thread pool
             with ThreadPoolExecutor(maxThreads) as executor:
                 # submit tasks and collect futures

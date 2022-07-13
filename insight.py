@@ -153,7 +153,11 @@ class insightConnect():
         logging.debug("getStatusType id:"+str(id))
         query = self.insightUrl+'/v1/config/statustype/'+str(id)
         result = self.insightGet(query)
-        return result if result else None
+        if result:
+            return result
+        else:
+            logging.info(f"getStatusType returned None for id: {id}")
+            return None
 
     def createStatusType(self, name, category, desc=None, objectSchemaId=None):
         logging.debug("createStatusType name:"+str(name)+", category:"+(str(category))+", desc:"+(str(desc))+", objectSchemaId:"+(str(objectSchemaId)))
@@ -171,7 +175,11 @@ class insightConnect():
         if objectSchemaId:
             data['objectSchemaId']=objectSchemaId
         result = self.insightPost(query, data)
-        return result if result else None
+        if result:
+            return result
+        else:
+            logging.warning(f"createStatusType returned None for name: {name}")
+            return None
     
     def updateStatusType(self, id, category, name=None, desc=None, objectSchemaId=None):
         logging.debug("updateStatusType id:"+str(id)+", name:"+(str(name))+", category:"+(str(category))+", desc:"+(str(desc))+", objectSchemaId:"+(str(objectSchemaId)))
@@ -190,7 +198,12 @@ class insightConnect():
         if objectSchemaId:
             data['objectSchemaId']=objectSchemaId # Optional
         result = self.insightPut(query, data)
-        return result["id"] if "id" in result else None
+
+        if "id" in result:
+            return result["id"]
+        else:
+            logging.warning(f"updateStatusType returned None for id: {id}")
+            return None
 
     def deleteStatusType(self, id):
         logging.debug("updateStatusType id"+str(id))
@@ -254,7 +267,12 @@ class insightConnect():
 
         query = f'{self.insightUrl}/v1/config/referencetype'
         result = self.insightPost(query, data)
-        return result if result else None
+        if result:
+            return result
+        else:
+            logging.warning(f"createReferenceType returned None for name: {name}")
+            return None
+
 
     def deleteReferenceType(self,referenceTypeId):
         logging.debug(f'deleteReferenceType id: {referenceTypeId}')
@@ -280,13 +298,22 @@ class insightConnect():
         if objectSchemaId:
             data['objectSchemaId']=objectSchemaId # Optional
         result = self.insightPut(query, data)
-        return result["id"] if "id" in result else None
+
+        if  "id" in result:
+            return result["id"]
+        else:
+            logging.warning(f"updateReferenceType returned None for id: {id}")
+            return None
 
     def getAttributeList(self, objectTypeId):
         logging.debug(f"getAttributeList objectTypeId: {objectTypeId}")
         query = f"{self.insightUrl}/v1/objecttype/{objectTypeId}/attributes"
         result = self.insightGet(query)
-        return result if result else None
+        if result:
+            return result
+        else:
+            logging.info(f"getAttributeList returned None for objectTypeId: {objectTypeId}")
+            return None
         
     def getLabelAttribute(self, objectTypeId):
         logging.debug(f"getLabelAttribute objectTypeId: {objectTypeId}")
@@ -294,6 +321,7 @@ class insightConnect():
         for attribute in attributes:
             if attribute.get('label'):
                 return attribute
+        logging.warning(f"getLabelAttribute returned None for objectTypeId: {objectTypeId}")
         return None
         
     def getObjects(self, iql, includeExtendedInfo=False, includeAttributes=True, includeAttributesDeep=1):
@@ -352,43 +380,71 @@ class insightConnect():
         logging.debug("getObject id:"+str(id))
         query = self.insightUrl+'/v1/object/'+str(id)
         result = self.insightGet(query)
-        return result if result else None
+        if result:
+            return result
+        else:
+            logging.info(f"getObject returned None for id: {id}")
+            return None
 
     def deleteObject(self, id):
         logging.debug("deleteObject id:"+str(id))
         query = self.insightUrl+'/v1/object/'+str(id)
         result = self.insightDelete(query)
-        return result if result else None
+        if result:
+            return result
+        else:
+            logging.warning(f"deleteObject returned None for id: {id}")
+            return None
 
     def getObjectAttributes(self, id):
         logging.debug("getObjectAttributes id:"+str(id))
         query = self.insightUrl+'/v1/object/'+str(id)+'/attributes'
         result = self.insightGet(query)
-        return result if result else None
+        if result:
+            return result
+        else:
+            logging.info(f"getObjectAttributes returned None for id: {id}")
+            return None
 
     def getObjectHistory(self, id):
         logging.debug("getObjectHistory id:"+str(id))
         query = self.insightUrl+'/v1/object/'+str(id)+'/history'
         result = self.insightGet(query)
-        return result if result else None
+        if result:
+            return result
+        else:
+            logging.info(f"getObjectHistory returned None for id: {id}")
+            return None
 
     def getObjectComment(self, id):
         logging.debug("getObjectComment id:"+str(id))
         query = self.insightUrl+'/v1/comment/object/'+str(id)
         result = self.insightGet(query)
-        return result if result else None
+        if result:
+            return result
+        else:
+            logging.info(f"getObjectComment returned None for id: {id}")
+            return None
 
     def getObjectReferenceInfo(self, id):
         logging.debug("getObjectReferenceInfo id:"+str(id))
         query = self.insightUrl+'/v1/object/'+str(id)+'/referenceinfo'
         result = self.insightGet(query)
-        return result if result else None
+        if result:
+            return result
+        else:
+            logging.info(f"getObjectReferenceInfo returned None for id: {id}")
+            return None
 
     def updateObject(self, objectId, data):
         logging.debug("updateObject id:"+str(objectId)+", data:"+(str(data)))
         query = self.insightUrl+'/v1/object/'+str(objectId)
         result = self.insightPut(query, data)
-        return result if result else None
+        if result:
+            return result
+        else:
+            logging.warning(f"updateObject returned None for objectId: {objectId}")
+            return None
 
     def updateObjectByLabel(self, objectLabelToUpdate, myDict, objectTypeName, objectSchemaName):
         logging.debug("updateObjectByLabel objectLabelToUpdate:"+str(objectLabelToUpdate)+", myDict:"+(str(myDict))+", objectType:"+(str(objectTypeName))+", objectSchema:"+(str(objectSchemaName)))
@@ -410,7 +466,7 @@ class insightConnect():
         return self.updateObject(objectToUpdate[0]['id'],json.loads(payload))
 
     def updateObjectByObjectTypeId(self, objectId, objectTypeId, myDict):
-        logging.debug("updateObjectById objectId: "+str(objectId)+", objectTypeId:"+str(objectTypeId)+", myDict:"+(str(myDict)))
+        logging.debug("updateObjectByObjectTypeId objectId: "+str(objectId)+", objectTypeId:"+str(objectTypeId)+", myDict:"+(str(myDict)))
         payload = self.constructObjectPayload(myDict,objectTypeId)
         return self.updateObject(objectId,json.loads(payload))
 
@@ -418,7 +474,11 @@ class insightConnect():
         logging.debug("createObject data:"+str(data))
         query = self.insightUrl+'/v1/object/create'
         result = self.insightPost(query, data)
-        return result if result else None
+        if result:
+            return result
+        else:
+            logging.warning("createObject returned None")
+            return None
 
     def createObjectByName(self, myDict, objectTypeName, objectSchemaName):
         logging.debug("createObjectByName myDict:"+str(myDict)+", objectTypeName:"+(str(objectTypeName))+", objectSchemaName:"+(str(objectSchemaName)))
@@ -470,7 +530,7 @@ class insightConnect():
         for objectSchema in objectSchemas:
             if objectSchema['name'] == name:
                 foundObjectSchema = objectSchema
-                continue
+                break
         return foundObjectSchema
  
     def getObjectSchemaByKey (self, key, reload=False):
@@ -489,13 +549,22 @@ class insightConnect():
         logging.debug("getObjectSchema id:"+str(id))
         query = self.insightUrl+'/v1/objectschema/'+str(id)
         result = self.insightGet(query)
-        return result if result else None
+        if result:
+            return result
+        else:
+            logging.info(f"getObjectSchema returned None for id: {id}")
+            return None
+
 
     def deleteObjectSchema(self, id):
         logging.debug("deleteObjectSchema id:"+str(id))
         query = self.insightUrl+'/v1/objectschema/'+str(id)
         result = self.insightDelete(query)
-        return result if result else None
+        if result:
+            return result
+        else:
+            logging.warning(f"deleteObjectSchema returned None for id: {id}")
+            return None
 
     def createObjectSchema(self, name, objectSchemaKey, description=None):
         logging.debug(f'createObjectSchema name:{name}, key:{objectSchemaKey}, description:{description}')
@@ -507,25 +576,41 @@ class insightConnect():
         if description:
             data['description'] = description
         result = self.insightPost(query, data)
-        return result if result else None
+        if result:
+            return result
+        else:
+            logging.warning(f"createObjectSchema returned None for {name} [{objectSchemaKey}]")
+            return None
 
     def updateObjectSchema(self, id, data):
         logging.debug("updateObjectschema id:"+str(id)+", data:"+(str(data)))
         query = self.insightUrl+'/v1/objectschema/'+str(id)
         result = self.insightPut(query, data)
-        return result if result else None
+        if result:
+            return result
+        else:
+            logging.warning(f"updateObjectschema returned None for id {id}")
+            return None
 
     def getObjectSchemaAttributes(self,id,onlyValueEditable=False,extended=True,query=""):
         logging.debug("getObjectSchemaAttributes id:"+str(id)+", onlyValueEditable:"+(str(onlyValueEditable))+", extended:"+(str(extended))+", query:"+(str(query)))
         url = self.insightUrl+'/v1/objectschema/'+str(id)+'/attributes?onlyValueEditable='+str(onlyValueEditable)+'&extended='+str(extended)+'&query='+urllib.parse.quote_plus(query)
         result = self.insightGet(url)
-        return result if result else None
+        if result:
+            return result
+        else:
+            logging.info(f"getObjectSchemaAttributes returned None for id {id}")
+            return None
 
     def getObjectSchemaProperties(self, id):
         logging.debug(f"getObjectSchemaProperties id: {id}")
         query = f"{self.insightUrl}/v1/global/config/objectschema/{id}/property"
         result = self.insightGet(query)
-        return result if result else None
+        if result:
+            return result
+        else:
+            logging.info(f"getObjectSchemaProperties returned None for id {id}")
+            return None
 
     def updateObjectSchemaProperties(self, id, allowOtherObjectSchema, createObjectsCustomField, quickCreateObjects, serviceDescCustomersEnabled, validateQuickCreate):
         logging.debug( f"updateObjectSchemaProperties id: {id}, allowOtherObjectSchema = {allowOtherObjectSchema}, createObjectsCustomField = {createObjectsCustomField}, quickCreateObjects = {quickCreateObjects}, serviceDescCustomersEnabled = {serviceDescCustomersEnabled}, validateQuickCreate = {validateQuickCreate}")
@@ -542,7 +627,11 @@ class insightConnect():
             data['validateQuickCreate'] = validateQuickCreate
         query = f"{self.insightUrl}/v1/global/config/objectschema/{id}/property"
         result = self.insightPost(query, data)
-        return result if result else None
+        if result:
+            return result
+        else:
+            logging.warning(f"updateObjectSchemaProperties returned None for id {id}")
+            return None
 
     def getObjectTypes (self, objectSchemaId, includeObjectCounts=False, reload=False):
         logging.debug("getObjectSchemaAttributes objectSchemaId:"+str(objectSchemaId)+", includeObjectCounts:"+(str(includeObjectCounts))+", reload:"+(str(reload)))
@@ -555,7 +644,11 @@ class insightConnect():
         query = self.insightUrl+'/v1/objectschema/'+str(objectSchemaId)+'/objecttypes/flat?includeObjectCounts='+str(includeObjectCounts)
         result = self.insightGet(query)
         self.objectTypes[objectSchemaId] = result
-        return result if result else None
+        if result:
+            return result
+        else:
+            logging.info(f"getObjectTypes returned None for objectSchemaId {objectSchemaId}")
+            return None
 
     def getObjectTypeByName (self, name, objectSchemaId, parentObjectTypeId = None, reload=False):
         logging.debug("getObjectTypeByName objectSchemaId:"+str(objectSchemaId)+", name:"+(str(name))+", reload:"+(str(reload)))
@@ -577,6 +670,7 @@ class insightConnect():
                     # This is a root object type, so name is unique
                     return objectType
         # No corresponding object type was found
+        logging.info(f"getObjectTypeByName returned None for name {name}")
         return None
  
     def getObjectType(self, id):
@@ -592,6 +686,7 @@ class insightConnect():
             self.objectTypes[result['objectSchemaId']] = result
             return result 
         else:
+            logging.info(f"getObjectType returned None for id {id}")
             return None
 
     def deleteObjectType(self, id):
@@ -601,7 +696,11 @@ class insightConnect():
             return None
         query = self.insightUrl+'/v1/objecttype/'+str(id)
         result = self.insightDelete(query)
-        return result if result else None
+        if result:
+            return result
+        else:
+            logging.warning(f"deleteObjectType returned None for id {id}")
+            return None
 
     def createObjectType(self, data):
         logging.debug("createObjectType data:"+str(data))
@@ -610,13 +709,21 @@ class insightConnect():
             return None
         query = self.insightUrl+'/v1/objecttype/create'
         result = self.insightPost(query, data)
-        return result if result else None
+        if result:
+            return result
+        else:
+            logging.warning(f"createObjectType returned None")
+            return None
 
     def updateObjectType(self, id, data):
         logging.debug("updateObjectType id:"+str(id)+", data:"+(str(data)))
         query = self.insightUrl+'/v1/objecttype/'+str(id)
         result = self.insightPut(query, data)
-        return result if result else None
+        if result:
+            return result
+        else:
+            logging.warning(f"updateObjectType returned None for id: {id}")
+            return None
 
     def getObjectTypeAttributes(self, id, reload=False):
         logging.debug("getObjectTypeAttributes id:"+str(id)+", reload:"+(str(reload)))
@@ -629,7 +736,11 @@ class insightConnect():
         query = self.insightUrl+'/v1/objecttype/'+str(id)+'/attributes'
         result = self.insightGet(query)
         self.objectTypeAttributes[id] = result
-        return result if result else None
+        if result:
+            return result
+        else:
+            logging.info(f"getObjectTypeAttributes returned None for id: {id}")
+            return None
 
     def getAttributeByName(self, objectTypeId, name, reload=False):
         logging.debug("getAttributeByName objectTypeId:"+str(objectTypeId)+", name:"+(str(name))+", reload:"+(str(reload)))
@@ -641,7 +752,11 @@ class insightConnect():
             if attribute['name'] == name:
                 foundAttribute = attribute
                 break
-        return foundAttribute
+        if foundAttribute:
+            return foundAttribute
+        else:
+            logging.info(f"getAttributeByName returned None for name: {name}")
+            return None
 
     def changeObjectTypePosition(self, id, parentObjectTypeId, newPosition):
         logging.debug("changeObjectTypePosition id:"+str(id)+", parentObjectTypeId:"+(str(parentObjectTypeId))+", newPosition:"+(str(newPosition)))
@@ -651,19 +766,31 @@ class insightConnect():
             "position": newPosition
         }
         result = self.insightPost(query, data)
-        return result if result else None
+        if result:
+            return result
+        else:
+            logging.warning(f"changeObjectTypePosition returned None for id: {id}")
+            return None
 
     def createObjectTypeAttribute(self, objectTypeId, data):
         logging.debug("createObjectTypeAttribute objectTypeId:"+str(objectTypeId)+", data:"+(str(data)))
         query = self.insightUrl+'/v1/objecttypeattribute/'+str(objectTypeId)
         result = self.insightPost(query,data)
-        return result if result else None
+        if result:
+            return result
+        else:
+            logging.warning(f"createObjectTypeAttribute returned None for objectTypeId: {objectTypeId}")
+            return None
     
     def updateObjectTypeAttribute(self, objectTypeId, id, data):
         logging.debug("updateObjectTypeAttribute objectTypeId:"+str(objectTypeId)+", id:"+(str(id))+", data:"+(str(data)))
         query = self.insightUrl+'/v1/objecttypeattribute/'+str(objectTypeId)+'/'+str(id)
         result = self.insightPut(query,data)
-        return result if result else None
+        if result:
+            return result
+        else:
+            logging.warning(f"updateObjectTypeAttribute returned None for id: {id}")
+            return None
 
     def moveObjectTypeAttribute(self,objectTypeId, id, position):
         logging.debug(f"moveObjectTypeAttribute objectTypeId:{objectTypeId}, id:{id}, position: {position}")
@@ -672,13 +799,21 @@ class insightConnect():
             "position": position
         }
         result = self.insightPost(query,data)
-        return result if result else None
+        if result:
+            return result
+        else:
+            logging.warning(f"moveObjectTypeAttribute returned None for id: {id}")
+            return None
         
     def deleteObjectTypeAttribute(self, id):
         logging.debug("deleteObjectTypeAttribute id:"+str(id))
         query = self.insightUrl+'/v1/objecttypeattribute/'+str(id)
         result = self.insightDelete(query)
-        return result if result else None
+        if result:
+            return result
+        else:
+            logging.warning(f"deleteObjectTypeAttribute returned None for id: {id}")
+            return None
 
     def createComment(self,comment,objectId, roleId=0):
         data = {
@@ -688,7 +823,11 @@ class insightConnect():
         }
         query = self.insightUrl+'/v1/comment/create'
         result = self.insightPost(query,data)
-        return result if result else None
+        if result:
+            return result
+        else:
+            logging.warning(f"createComment returned None for objectId: {objectId}")
+            return None
     
     def constructObjectPayload(self, myDict, objectTypeId):
         logging.debug("constructObjectPayload myDict:"+str(myDict)+", objectTypeId:"+(str(objectTypeId)))
@@ -790,7 +929,8 @@ class insightConnect():
         
         updatedAttributes = updatedAttributes.rstrip(",") + "]" # Remove last comma
         payload = payload + updatedAttributes + "}" # Add all attributes to the Json payload
-
+        
+        logging.debug("constructObjectPayload return payload:"+str(payload))
         return payload
     
     def getJiraUserAccount(self, value):
@@ -806,6 +946,7 @@ class insightConnect():
             if userAccount.get('accountId') == value:
                 return userAccount # Match found for accountId
         
+        logging.info(f"getJiraUserAccount returned None for name: {value}")
         return None # No match found
     
     def getJiraGroup(self, name):
@@ -815,6 +956,7 @@ class insightConnect():
             if group['name'] == name:
                 return group # Match found
 
+        logging.info(f"getJiraGroup returned None for name: {value}")
         return None  # No match found
 
     def getAllJiraUserAccounts(self, startAt=0, maxResults=50, reload=False):
@@ -827,7 +969,11 @@ class insightConnect():
         query = self.jiraUrl+'/rest/api/3/users/search?startAt='+str(startAt)+'&maxResults='+str(maxResults)
         result = self.insightGet(query)
         self.jiraUserAccounts = result
-        return result if result else None
+        if result:
+            return result
+        else:
+            logging.info(f"getAllJiraUserAccounts returned None for startAt: {startAt}")
+            return None
 
     def getAllJiraUserGroups(self, startAt=0, maxResults=50, reload=False):
         logging.debug("getAllJiraUserGroups startAt:"+str(startAt)+", maxResults:"+(str(maxResults))+", reload:"+(str(reload)))
@@ -839,7 +985,12 @@ class insightConnect():
         query = self.jiraUrl+'/rest/api/3/bulk?startAt='+str(startAt)+'&maxResults='+str(maxResults)
         result = self.insightGet(query)
         self.jiraGroups = result
-        return result['values'] if result else None
+
+        if result:
+            return result['values']
+        else:
+            logging.info(f"getAllJiraUserGroups returned None for startAt: {startAt}")
+            return None
     
     def getObjectData(self, object):
         logging.debug(f"insight > getObjectData > object: {object['name']} [{object['id']}]")
