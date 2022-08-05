@@ -955,7 +955,7 @@ class insightConnect():
             if group['name'] == name:
                 return group # Match found
 
-        logging.info(f"getJiraGroup returned None for name: {value}")
+        logging.info(f"getJiraGroup returned None for name: {name}")
         return None  # No match found
 
     def getAllJiraUserAccounts(self, startAt=0, maxResults=50, reload=False):
