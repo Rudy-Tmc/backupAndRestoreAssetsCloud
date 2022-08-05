@@ -981,7 +981,7 @@ class insightConnect():
             return self.jiraGroups
         
         # Get all user groups from the Jira site
-        query = self.jiraUrl+'/rest/api/3/bulk?startAt='+str(startAt)+'&maxResults='+str(maxResults)
+        query = self.jiraUrl+'/rest/api/3/group/bulk?startAt='+str(startAt)+'&maxResults='+str(maxResults)
         result = self.insightGet(query)
         self.jiraGroups = result
 
