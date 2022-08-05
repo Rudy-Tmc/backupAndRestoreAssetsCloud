@@ -916,8 +916,7 @@ class insightConnect():
                         skipAttribute = True 
                     
                 if not skipValue:
-                    # updatedAttributeValues = updatedAttributeValues + '{"value": "'+aggVal.replace('"', '\\"')+'"}' + ","
-                    updatedAttributeValues = updatedAttributeValues + '{"value": "'+aggVal+'"}' + ","
+                    updatedAttributeValues = updatedAttributeValues + '{"value": "'+escape(aggVal)+'"}' + ","
                 skipValue = False
             
             if skipAttribute:
@@ -1097,3 +1096,8 @@ def getCommandlineOptions():
     options = loadJson(configFile)
     
     return options
+
+def escape(s):
+    """ Escape unescaped double quotes in string s """
+    return ''.join(f'\\{c}' if c == '"' and s[max(i-1, 0)] != '\\' else c
+                   for i, c in enumerate(s))
