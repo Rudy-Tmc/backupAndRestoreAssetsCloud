@@ -794,7 +794,8 @@ class insightConnect():
 
     def moveObjectTypeAttribute(self,objectTypeId, id, position):
         logging.debug(f"moveObjectTypeAttribute objectTypeId:{objectTypeId}, id:{id}, position: {position}")
-        query = f"{self.insightUrl}/v1/objecttypeattribute/{objectTypeId}/{id}/move"
+        # query = f"{self.insightUrl}/v1/objecttypeattribute/{objectTypeId}/{id}/move"
+        query = f"{self.insightUrl}/v1/objecttypeattribute/{objectTypeId}/{id}/position"
         data = {
             "position": position
         }
