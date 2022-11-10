@@ -794,7 +794,8 @@ class insightConnect():
 
     def moveObjectTypeAttribute(self,objectTypeId, id, position):
         logging.debug(f"moveObjectTypeAttribute objectTypeId:{objectTypeId}, id:{id}, position: {position}")
-        query = f"{self.insightUrl}/v1/objecttypeattribute/{objectTypeId}/{id}/move"
+        # query = f"{self.insightUrl}/v1/objecttypeattribute/{objectTypeId}/{id}/move"
+        query = f"{self.insightUrl}/v1/objecttypeattribute/{objectTypeId}/{id}/position"
         data = {
             "position": position
         }
@@ -916,8 +917,7 @@ class insightConnect():
                         skipAttribute = True 
                     
                 if not skipValue:
-                    # updatedAttributeValues = updatedAttributeValues + '{"value": "'+aggVal.replace('"', '\\"')+'"}' + ","
-                    updatedAttributeValues = updatedAttributeValues + '{"value": "'+aggVal+'"}' + ","
+                    updatedAttributeValues = updatedAttributeValues + '{"value": "'+escape(aggVal)+'"}' + ","
                 skipValue = False
             
             if skipAttribute:
@@ -956,7 +956,7 @@ class insightConnect():
             if group['name'] == name:
                 return group # Match found
 
-        logging.info(f"getJiraGroup returned None for name: {value}")
+        logging.info(f"getJiraGroup returned None for name: {name}")
         return None  # No match found
 
     def getAllJiraUserAccounts(self, startAt=0, maxResults=50, reload=False):
@@ -982,7 +982,7 @@ class insightConnect():
             return self.jiraGroups
         
         # Get all user groups from the Jira site
-        query = self.jiraUrl+'/rest/api/3/bulk?startAt='+str(startAt)+'&maxResults='+str(maxResults)
+        query = self.jiraUrl+'/rest/api/3/group/bulk?startAt='+str(startAt)+'&maxResults='+str(maxResults)
         result = self.insightGet(query)
         self.jiraGroups = result
 
@@ -1097,3 +1097,8 @@ def getCommandlineOptions():
     options = loadJson(configFile)
     
     return options
+
+def escape(s):
+    """ Escape unescaped double quotes in string s """
+    return ''.join(f'\\{c}' if c == '"' and s[max(i-1, 0)] != '\\' else c
+                   for i, c in enumerate(s))

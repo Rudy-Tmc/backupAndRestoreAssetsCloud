@@ -535,6 +535,12 @@ try:
             jsonfile = f"{importDataPath}/config/attributes/{fn}.json"
             jsonfile = jsonfile.replace(" ", '_')      
         
+            if not os.path.exists(jsonfile):
+                # Catch upstream logic bug where author makes assumptions of what was exported. TODO: For RCI when we have time.
+                logging.warning(f"BUG Missing attribute type in backup: name={newObjectType['name']}, "
+                                f"id={oldOjbectTypeId} (expected file to exist: {jsonfile}). Skipping")
+                continue
+
             attributes = insight.loadJson(jsonfile)
             newAttributes=[]
 
@@ -602,9 +608,37 @@ try:
 
                 # start the thread pool
                 with ThreadPoolExecutor(maxThreads) as executor:
+                    # Verify original author's precondition assumptions, and allow other restore steps to
+                    # continue if those are invalid, so as to not get a complete recovery failure.
+                    futures = []
+                    for objectId, obj in objects.items():
+                        if objectId not in objectIdTranslate:
+                            logging.warning(f'BUG Missing objectId={objectId} in objectIdTranslate')
+                            continue
+                        translatedId = objectIdTranslate[objectId]
+
+                        if translatedId not in newObjects:
+                            logging.warning(f'BUG Missing translated objectId={translatedId} in newObjects')
+                            continue
+
+                        newObject = newObjects[translatedId]
+
+                        if 'objectType' not in newObject:
+                            logging.warning(f'BUG Missing objectType attrbute in newObject with translatedId={translatedId}. object missing the attribute: {newObject}')
+                            continue
+
+                        if 'id' not in newObject['objectType']:
+                            logging.warning(f'BUG Missing objectType->id attrbute in newObject with translatedId={translatedId}. object missing the attribute: {newObject}')
+                            continue
+
+                        newObjectId = newObject['objectType']['id']
+                        futures.append(executor.submit(updateObjectByObjectTypeId, translatedId, newObjectId, obj))
+                    # END author assumption validation
+
                     # Update the object
                     # submit tasks and collect futures
-                    futures = [executor.submit(updateObjectByObjectTypeId, objectIdTranslate[objectId], newObjects[objectIdTranslate[objectId]]['objectType']['id'], objects[objectId]) for objectId in objects]
+                    #futures = [executor.submit(updateObjectByObjectTypeId, objectIdTranslate[objectId], newObjects[objectIdTranslate[objectId]]['objectType']['id'], objects[objectId]) for objectId in objects]
+
                     # process task results as they are available
                     for future in as_completed(futures):
                         
@@ -652,6 +686,12 @@ try:
                 jsonfile = f"{importDataPath}/config/attributes/{fn}.json"
                 jsonfile = jsonfile.replace(" ", '_')      
             
+                if not os.path.exists(jsonfile):
+                    # Catch upstream logic bug where author makes assumptions of what was exported. TODO: For RCI when we have time.
+                    logging.warning(f"BUG Missing attribute restriction in backup: name={newObjectType['name']}, "
+                                    f"id={oldOjbectTypeId} (expected file to exist: {jsonfile}). Skipping")
+                    continue
+
                 attributes = insight.loadJson(jsonfile)
                 with ThreadPoolExecutor(maxThreads) as executor:
                     futures = [executor.submit(updateAttributeType, newObjectType, attribute, attributeIdTranslate) for attribute in attributes]
