@@ -4,7 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import as_completed
 
 # Script settings 
-maxThreads = 16
+maxThreads = 5
 
 logFileKeep = 10 # Number of days to keep the logfiles, before being rotated
 logFile = os.path.dirname(os.path.abspath(__file__))+"/backup.log"
@@ -150,7 +150,10 @@ try:
                     # retrieve the result
                     objectHistory = future.result()
                     if objectHistory:
-                        insight.saveAsJson(objectHistory,objectHistory[0]['objectId'], backupLocation+"/objects/history")
+                        if isinstance(objectHistory, list):
+                            insight.saveAsJson(objectHistory,objectHistory[0]['objectId'], backupLocation+"/objects/history")
+                        elif objectHistory.get('message') =='Request limit exceeded':
+                            logging.warning("Request limit exceeded when searching for history, please reduce the maxThreads value")
             logging.info(f"        - history")
                 
             # - object history
@@ -162,7 +165,12 @@ try:
                     # retrieve the result
                     objectComment = future.result()
                     if objectComment:
-                        insight.saveAsJson(objectComment,objectComment[0]['objectId'], backupLocation+"/objects/comments")
+                        if isinstance(objectComment, list):
+                            insight.saveAsJson(objectComment,objectComment[0]['objectId'], backupLocation+"/objects/comments")
+                        elif objectComment.get('message') =='Request limit exceeded':
+                            logging.warning("Request limit exceeded when searching for comments, please reduce the maxThreads value")
+
+                            
             logging.info(f"        - comments")
     
     # Zip the backup
