@@ -3,6 +3,7 @@
     "username"                  : "user@example.com",
     "apiToken"                  : "<Atlassian API Token>",
     "folder"                    : "<folder where the backup is stored>",
+    "processObjects"		    : true,
     "processComments"           : true,
     "processHistory"            : true,
     "setAttributeRestrictions"  : true,

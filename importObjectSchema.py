@@ -384,6 +384,7 @@ try:
     # Load config settings
     options = insight.getCommandlineOptions()
     
+    processObjects = options.get('processObjects') if 'processObjects' in options else True
     processComments = options.get('processComments') if 'processComments' in options else True
     processHistory = options.get('processHistory') if 'processHistory' in options else True
     setAttributeRestrictions = options.get('setAttributeRestrictions') if 'setAttributeRestrictions' in options else True
@@ -575,130 +576,131 @@ try:
         # - create objects without attributes (only labels)
         # This is done to be able to refer to objects in attributes.
         newObjects = {}
-        for filename in os.listdir(f'{importDataPath}/objectsmeta'):
-            if filename.endswith('.json'):
-                jsonfile = f'{importDataPath}/objectsmeta/{filename}'
-                jsonfile = jsonfile.replace(" ", '_')      
-                objects = insight.loadJson(jsonfile)
+        if processObjects:
+            for filename in os.listdir(f'{importDataPath}/objectsmeta'):
+                if filename.endswith('.json'):
+                    jsonfile = f'{importDataPath}/objectsmeta/{filename}'
+                    jsonfile = jsonfile.replace(" ", '_')      
+                    objects = insight.loadJson(jsonfile)
 
-                # start the thread pool
-                with ThreadPoolExecutor(maxThreads) as executor:
-                    # submit tasks and collect futures
-                    futures = [executor.submit(createObject, objectTypeIdTranslate.get(object['objectType']['id']), object) for object in objects]
-                    # process task results as they are available
-                    for future in as_completed(futures):
-                        # retrieve the result
-                        # if not future:
-                        #     a = future.result()
-                        oldObject, newObject = future.result()
-                        if newObject:
-                            if 'errorMessages' in newObject:
-                                logging.warning(f"Object '{oldObject.get('label')}'of type '{oldObject['objectType']['name']}' could not be created")
-                                logging.warning(f"")
-                                continue
-                            objectIdTranslate[oldObject['id']]=newObject['id']
-                            newObjects[newObject['id']]=newObject
-
-        # - Update the object with attribute values            
-        for filename in os.listdir(f'{importDataPath}/objects'):
-            if filename.endswith('.json'):
-                jsonfile = f'{importDataPath}/objects/{filename}'
-                jsonfile = jsonfile.replace(" ", '_')      
-                objects = insight.loadJson(jsonfile)
-
-                # start the thread pool
-                with ThreadPoolExecutor(maxThreads) as executor:
-                    # Verify original author's precondition assumptions, and allow other restore steps to
-                    # continue if those are invalid, so as to not get a complete recovery failure.
-                    futures = []
-                    for objectId, obj in objects.items():
-                        if objectId not in objectIdTranslate:
-                            logging.warning(f'BUG Missing objectId={objectId} in objectIdTranslate')
-                            continue
-                        translatedId = objectIdTranslate[objectId]
-
-                        if translatedId not in newObjects:
-                            logging.warning(f'BUG Missing translated objectId={translatedId} in newObjects')
-                            continue
-
-                        newObject = newObjects[translatedId]
-
-                        if 'objectType' not in newObject:
-                            logging.warning(f'BUG Missing objectType attrbute in newObject with translatedId={translatedId}. object missing the attribute: {newObject}')
-                            continue
-
-                        if 'id' not in newObject['objectType']:
-                            logging.warning(f'BUG Missing objectType->id attrbute in newObject with translatedId={translatedId}. object missing the attribute: {newObject}')
-                            continue
-
-                        newObjectId = newObject['objectType']['id']
-                        futures.append(executor.submit(updateObjectByObjectTypeId, translatedId, newObjectId, obj))
-                    # END author assumption validation
-
-                    # Update the object
-                    # submit tasks and collect futures
-                    #futures = [executor.submit(updateObjectByObjectTypeId, objectIdTranslate[objectId], newObjects[objectIdTranslate[objectId]]['objectType']['id'], objects[objectId]) for objectId in objects]
-
-                    # process task results as they are available
-                    for future in as_completed(futures):
-                        
-                        # retrieve the result
-                        newObject = future.result()
-                        if newObject:
-                            if newObject.get('id'):
+                    # start the thread pool
+                    with ThreadPoolExecutor(maxThreads) as executor:
+                        # submit tasks and collect futures
+                        futures = [executor.submit(createObject, objectTypeIdTranslate.get(object['objectType']['id']), object) for object in objects]
+                        # process task results as they are available
+                        for future in as_completed(futures):
+                            # retrieve the result
+                            # if not future:
+                            #     a = future.result()
+                            oldObject, newObject = future.result()
+                            if newObject:
+                                if 'errorMessages' in newObject:
+                                    logging.warning(f"Object '{oldObject.get('label')}'of type '{oldObject['objectType']['name']}' could not be created")
+                                    logging.warning(f"")
+                                    continue
+                                objectIdTranslate[oldObject['id']]=newObject['id']
                                 newObjects[newObject['id']]=newObject
-                                logging.info(f"Updated: {newObject['name']}")
 
-        # - add comments to objects
-        if processComments:
-            logging.info("Start restoring comments")
-            if isdir(f'{importDataPath}/objects/comments'):
-                with ThreadPoolExecutor(maxThreads) as executor:
-                    futures = [executor.submit(addComment, f'{importDataPath}/objects/comments/{filename}', objectIdTranslate) for filename in os.listdir(f'{importDataPath}/objects/comments')]
-                    # process task results as they are available
-                    for future in as_completed(futures):
-                        commentResponse = future.result()
-                logging.info(f"Comments created")
+            # - Update the object with attribute values            
+            for filename in os.listdir(f'{importDataPath}/objects'):
+                if filename.endswith('.json'):
+                    jsonfile = f'{importDataPath}/objects/{filename}'
+                    jsonfile = jsonfile.replace(" ", '_')      
+                    objects = insight.loadJson(jsonfile)
 
-        # - add history to objects
-        if processHistory:
-            logging.info("Start restoring history")
-            if isdir(f'{importDataPath}/objects/history'):
-                with ThreadPoolExecutor(maxThreads) as executor:
-                    futures = [executor.submit(addHistoryasComment, f'{importDataPath}/objects/history/{filename}', objectIdTranslate) for filename in os.listdir(f'{importDataPath}/objects/history')]
-                    # process task results as they are available
-                    for future in as_completed(futures):
-                        historyResponse = future.result()
-                logging.info(f"History comments created")
-            
-        # - add restrictions to attributes
-        if setAttributeRestrictions:
-            for newObjectType in newObjectTypes:
-                oldOjbectTypeId = ''
-                for oldId, newId in objectTypeIdTranslate.items():
-                    if newId == newObjectType['id']:
-                        oldOjbectTypeId = oldId
-                        break
-                # Create attributes for object type
-                fn = f"{newObjectType['name']}_{oldOjbectTypeId}"
-                fn = fn.replace("/","_") # if a slash '/' is in the name turn it into a underscore '_'
-                fn = fn.replace("\\","_") # if a backslash '\' is in the name turn it into a underscore '_'
-                jsonfile = f"{importDataPath}/config/attributes/{fn}.json"
-                jsonfile = jsonfile.replace(" ", '_')      
-            
-                if not os.path.exists(jsonfile):
-                    # Catch upstream logic bug where author makes assumptions of what was exported. TODO: For RCI when we have time.
-                    logging.warning(f"BUG Missing attribute restriction in backup: name={newObjectType['name']}, "
-                                    f"id={oldOjbectTypeId} (expected file to exist: {jsonfile}). Skipping")
-                    continue
+                    # start the thread pool
+                    with ThreadPoolExecutor(maxThreads) as executor:
+                        # Verify original author's precondition assumptions, and allow other restore steps to
+                        # continue if those are invalid, so as to not get a complete recovery failure.
+                        futures = []
+                        for objectId, obj in objects.items():
+                            if objectId not in objectIdTranslate:
+                                logging.warning(f'BUG Missing objectId={objectId} in objectIdTranslate')
+                                continue
+                            translatedId = objectIdTranslate[objectId]
 
-                attributes = insight.loadJson(jsonfile)
-                with ThreadPoolExecutor(maxThreads) as executor:
-                    futures = [executor.submit(updateAttributeType, newObjectType, attribute, attributeIdTranslate) for attribute in attributes]
-                    # process task results as they are available
-                    for future in as_completed(futures):
-                        updatedAttribute = future.result()
-                        logging.info(f"Attribute {updatedAttribute.get('name')} updated")
+                            if translatedId not in newObjects:
+                                logging.warning(f'BUG Missing translated objectId={translatedId} in newObjects')
+                                continue
+
+                            newObject = newObjects[translatedId]
+
+                            if 'objectType' not in newObject:
+                                logging.warning(f'BUG Missing objectType attrbute in newObject with translatedId={translatedId}. object missing the attribute: {newObject}')
+                                continue
+
+                            if 'id' not in newObject['objectType']:
+                                logging.warning(f'BUG Missing objectType->id attrbute in newObject with translatedId={translatedId}. object missing the attribute: {newObject}')
+                                continue
+
+                            newObjectId = newObject['objectType']['id']
+                            futures.append(executor.submit(updateObjectByObjectTypeId, translatedId, newObjectId, obj))
+                        # END author assumption validation
+
+                        # Update the object
+                        # submit tasks and collect futures
+                        #futures = [executor.submit(updateObjectByObjectTypeId, objectIdTranslate[objectId], newObjects[objectIdTranslate[objectId]]['objectType']['id'], objects[objectId]) for objectId in objects]
+
+                        # process task results as they are available
+                        for future in as_completed(futures):
+                            
+                            # retrieve the result
+                            newObject = future.result()
+                            if newObject:
+                                if newObject.get('id'):
+                                    newObjects[newObject['id']]=newObject
+                                    logging.info(f"Updated: {newObject['name']}")
+
+            # - add comments to objects
+            if processComments:
+                logging.info("Start restoring comments")
+                if isdir(f'{importDataPath}/objects/comments'):
+                    with ThreadPoolExecutor(maxThreads) as executor:
+                        futures = [executor.submit(addComment, f'{importDataPath}/objects/comments/{filename}', objectIdTranslate) for filename in os.listdir(f'{importDataPath}/objects/comments')]
+                        # process task results as they are available
+                        for future in as_completed(futures):
+                            commentResponse = future.result()
+                    logging.info(f"Comments created")
+
+            # - add history to objects
+            if processHistory:
+                logging.info("Start restoring history")
+                if isdir(f'{importDataPath}/objects/history'):
+                    with ThreadPoolExecutor(maxThreads) as executor:
+                        futures = [executor.submit(addHistoryasComment, f'{importDataPath}/objects/history/{filename}', objectIdTranslate) for filename in os.listdir(f'{importDataPath}/objects/history')]
+                        # process task results as they are available
+                        for future in as_completed(futures):
+                            historyResponse = future.result()
+                    logging.info(f"History comments created")
+                
+            # - add restrictions to attributes
+            if setAttributeRestrictions:
+                for newObjectType in newObjectTypes:
+                    oldOjbectTypeId = ''
+                    for oldId, newId in objectTypeIdTranslate.items():
+                        if newId == newObjectType['id']:
+                            oldOjbectTypeId = oldId
+                            break
+                    # Create attributes for object type
+                    fn = f"{newObjectType['name']}_{oldOjbectTypeId}"
+                    fn = fn.replace("/","_") # if a slash '/' is in the name turn it into a underscore '_'
+                    fn = fn.replace("\\","_") # if a backslash '\' is in the name turn it into a underscore '_'
+                    jsonfile = f"{importDataPath}/config/attributes/{fn}.json"
+                    jsonfile = jsonfile.replace(" ", '_')      
+                
+                    if not os.path.exists(jsonfile):
+                        # Catch upstream logic bug where author makes assumptions of what was exported. TODO: For RCI when we have time.
+                        logging.warning(f"BUG Missing attribute restriction in backup: name={newObjectType['name']}, "
+                                        f"id={oldOjbectTypeId} (expected file to exist: {jsonfile}). Skipping")
+                        continue
+
+                    attributes = insight.loadJson(jsonfile)
+                    with ThreadPoolExecutor(maxThreads) as executor:
+                        futures = [executor.submit(updateAttributeType, newObjectType, attribute, attributeIdTranslate) for attribute in attributes]
+                        # process task results as they are available
+                        for future in as_completed(futures):
+                            updatedAttribute = future.result()
+                            logging.info(f"Attribute {updatedAttribute.get('name')} updated")
 
 except KeyboardInterrupt:
     # handle Ctrl-C
