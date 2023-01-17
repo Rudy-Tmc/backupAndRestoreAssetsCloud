@@ -1,10 +1,10 @@
-from insight import insightConnect
-import os, time, insight, logging, logging.handlers
+from assets import assetsConnect
+import os, time, assets, logging, logging.handlers
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import as_completed
 
 # Script settings 
-maxThreads = 16
+maxThreads = 10
 
 logFileKeep = 10 # Number of days to keep the logfiles, before being rotated
 logFile = os.path.dirname(os.path.abspath(__file__))+"/backup.log"
@@ -28,25 +28,25 @@ logging.getLogger().addHandler(consoleLogger)
 logging.info("-----------Start of Run-----------")    
 
 def getObjectData(object):
-    objectData = myInsight.getObjectData(object)
+    objectData = myAssets.getObjectData(object)
     return object['id'], objectData
 
 def getObjectHistory(object):
-    objectHistory = myInsight.getObjectHistory(object['id'])
+    objectHistory = myAssets.getObjectHistory(object['id'])
     return objectHistory
 
 def getObjectComment(object):
-    objectComment = myInsight.getObjectComment(object['id'])
+    objectComment = myAssets.getObjectComment(object['id'])
     return objectComment
 
 try:
     timeString = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
 
     # Load config settings
-    options = insight.getCommandlineOptions()
+    options = assets.getCommandlineOptions()
 
-    # Connect to insight
-    myInsight = insightConnect(options.get('siteName'), options.get('username'), options.get('apiToken'))
+    # Connect to assets
+    myAssets = assetsConnect(options.get('siteName'), options.get('username'), options.get('apiToken'))
 
     # get the object schema keys we want to backup
     objectSchemaKeys = options.get('objectSchemaKeys')
@@ -54,10 +54,10 @@ try:
 
     if not objectSchemaKeys:
         # If no object schema keys are specified, backup everything
-        objectSchemas = myInsight.getObjectSchemas()
+        objectSchemas = myAssets.getObjectSchemas()
     else:
         for objectSchemaKey in objectSchemaKeys:
-            objectSchema = myInsight.getObjectSchemaByKey(objectSchemaKey)
+            objectSchema = myAssets.getObjectSchemaByKey(objectSchemaKey)
             if not objectSchema:
                 logging.info(f"WARNING: Could not find object schema for key: '{objectSchemaKey}'")
                 continue
@@ -69,7 +69,7 @@ try:
     backupLocationPrefix = os.path.dirname(os.path.realpath(__file__))+"/"+timeString
 
     # Backup object schema's
-    insight.saveAsJson(objectSchemas,"objectschemas", backupLocationPrefix+"/config")
+    assets.saveAsJson(objectSchemas,"objectschemas", backupLocationPrefix+"/config")
 
     logging.info("Start backup of:")
     for objectSchema in objectSchemas: 
@@ -78,38 +78,38 @@ try:
         
         # Backup meta data
         # - object schema
-        insight.saveAsJson(objectSchema,"objectschema", backupLocation+"/config")
+        assets.saveAsJson(objectSchema,"objectschema", backupLocation+"/config")
         logging.info("   - objectschema")
         
         # - object schema properties
-        objectSchemaProperties = myInsight.getObjectSchemaProperties(objectSchema['id'])
-        insight.saveAsJson(objectSchemaProperties,"objectschema_properties", backupLocation+"/config")
+        objectSchemaProperties = myAssets.getObjectSchemaProperties(objectSchema['id'])
+        assets.saveAsJson(objectSchemaProperties,"objectschema_properties", backupLocation+"/config")
         logging.info("   - object schema properties")
         
         # - global reference types
-        referenceTypes = myInsight.getGlobalReferenceTypes()
-        insight.saveAsJson(referenceTypes,"global_referencetypes", backupLocation+"/config")
+        referenceTypes = myAssets.getGlobalReferenceTypes()
+        assets.saveAsJson(referenceTypes,"global_referencetypes", backupLocation+"/config")
         logging.info("   - global referencetypes")
 
         # - global status types
-        statusTypes = myInsight.getGlobalStatusTypes()
-        insight.saveAsJson(statusTypes,"global_statustypes", backupLocation+"/config")
+        statusTypes = myAssets.getGlobalStatusTypes()
+        assets.saveAsJson(statusTypes,"global_statustypes", backupLocation+"/config")
         logging.info("   - global statustypes")
 
         # Backup schema
         # - schema reference types
-        objectSchemaReferenceTypes = myInsight.getReferenceTypes(objectSchema['id'])
-        insight.saveAsJson(objectSchemaReferenceTypes,"referencetypes", backupLocation+"/config")
+        objectSchemaReferenceTypes = myAssets.getReferenceTypes(objectSchema['id'])
+        assets.saveAsJson(objectSchemaReferenceTypes,"referencetypes", backupLocation+"/config")
         logging.info("   - schema referencetypes")
 
         # - schema status types
-        objectSchemaStatusTypes = myInsight.getStatusTypes(objectSchema['id'])
-        insight.saveAsJson(objectSchemaStatusTypes,"statustypes", backupLocation+"/config")
+        objectSchemaStatusTypes = myAssets.getStatusTypes(objectSchema['id'])
+        assets.saveAsJson(objectSchemaStatusTypes,"statustypes", backupLocation+"/config")
         logging.info("   - schema statustypes")
 
         # - object types
-        allObjectTypes = myInsight.getObjectTypes(objectSchema['id'])
-        insight.saveAsJson(allObjectTypes,"objecttypes", backupLocation+"/config")
+        allObjectTypes = myAssets.getObjectTypes(objectSchema['id'])
+        assets.saveAsJson(allObjectTypes,"objecttypes", backupLocation+"/config")
         nrOfObjectTypes = len(allObjectTypes)
         logging.info(f"   - objecttypes [{nrOfObjectTypes}]")
 
@@ -118,13 +118,13 @@ try:
         for objectType in allObjectTypes:
             i += 1
             logging.info(f"- '{objectType['name']}' [{i}/{nrOfObjectTypes}]:")
-            attributeList = myInsight.getAttributeList(objectType['id'])
-            insight.saveAsJson(attributeList,f"{objectType['name']}_{objectType['id']}", backupLocation+"/config/attributes")
+            attributeList = myAssets.getAttributeList(objectType['id'])
+            assets.saveAsJson(attributeList,f"{objectType['name']}_{objectType['id']}", backupLocation+"/config/attributes")
             logging.info(f"     - attributes [{len(attributeList)}]")
             
             # - objects
-            objects = myInsight.getObjects("objectTypeId="+objectType['id'])
-            insight.saveAsJson(objects,f"{objectType['name']}_{objectType['id']}", backupLocation+"/objectsmeta")
+            objects = myAssets.getObjects("objectTypeId="+objectType['id'])
+            assets.saveAsJson(objects,f"{objectType['name']}_{objectType['id']}", backupLocation+"/objectsmeta")
             logging.info(f"     - object types [{len(objects)}]")
 
             # - object data
@@ -138,7 +138,7 @@ try:
                     # retrieve the result
                     objectId, objectData = future.result()
                     objectsData[objectId] = objectData
-            insight.saveAsJson(objectsData,f"{objectType['name']}_{objectType['id']}", backupLocation+"/objects")
+            assets.saveAsJson(objectsData,f"{objectType['name']}_{objectType['id']}", backupLocation+"/objects")
             logging.info(f"        - data")
             
             # - object history
@@ -150,7 +150,7 @@ try:
                     # retrieve the result
                     objectHistory = future.result()
                     if objectHistory:
-                        insight.saveAsJson(objectHistory,objectHistory[0]['objectId'], backupLocation+"/objects/history")
+                        assets.saveAsJson(objectHistory,objectHistory[0]['objectId'], backupLocation+"/objects/history")
             logging.info(f"        - history")
                 
             # - object history
@@ -162,11 +162,11 @@ try:
                     # retrieve the result
                     objectComment = future.result()
                     if objectComment:
-                        insight.saveAsJson(objectComment,objectComment[0]['objectId'], backupLocation+"/objects/comments")
+                        assets.saveAsJson(objectComment,objectComment[0]['objectId'], backupLocation+"/objects/comments")
             logging.info(f"        - comments")
     
     # Zip the backup
-    insight.zipDir(backupLocationPrefix, f"insight-backup-{timeString}.zip")
+    assets.zipDir(backupLocationPrefix, f"assets-backup-{timeString}.zip")
 except KeyboardInterrupt:
     # handle Ctrl-C
     logging.warn("Cancelled by user")
