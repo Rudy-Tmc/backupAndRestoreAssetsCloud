@@ -533,9 +533,10 @@ try:
             fn = f"{newObjectType['name']}_{oldOjbectTypeId}"
             fn = fn.replace("/","_") # if a slash '/' is in the name turn it into a underscore '_'
             fn = fn.replace("\\","_") # if a backslash '\' is in the name turn it into a underscore '_'
-            jsonfile = f"{importDataPath}/config/attributes/{fn}.json"
+            jsonfile = f"config/attributes/{fn}.json"
             jsonfile = jsonfile.replace(" ", '_')      
-        
+            jsonfile = f"{importDataPath}/{jsonfile}"
+            
             if not os.path.exists(jsonfile):
                 # Catch upstream logic bug where author makes assumptions of what was exported. TODO: For RCI when we have time.
                 logging.warning(f"BUG Missing attribute type in backup: name={newObjectType['name']}, "

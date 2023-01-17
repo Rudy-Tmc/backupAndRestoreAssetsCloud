@@ -1,6 +1,7 @@
 from os.path import exists,abspath
 from dateutil.tz import tzlocal
-import re, io, os, json, base64, logging, logging.handlers, urllib.parse, zipfile, optparse
+from datetime import datetime as dt
+import re, io, os, json, base64, logging, logging.handlers, urllib.parse, zipfile, optparse, time
 import requests         # python -m pip install requests
 import dateutil.parser as parser
 
@@ -19,6 +20,10 @@ class insightConnect():
         self.username = username
         self.apiKey   = base64.b64encode(bytes(username+":"+apiToken, 'utf-8')).decode('ascii')
         self.headers  = {"Authorization": "Basic "+self.apiKey, "Content-Type": "application/json"}
+
+        self.requestNumber = 0
+        self.requestMinute = dt.now().minute
+        self.throttleLimit = 975 # Atlasssian throttle is 1000 requests per minute, but to be on the safe side, reduce it a bit.
         
         # Get workspaceId
         workspaceId = self.getWorkspaceId()
@@ -46,9 +51,32 @@ class insightConnect():
         result = self.insightGet(query)
         return result['values'][0]['workspaceId'] if result else None
         
+    def throttleTest(self):
+        # The rest api is throttled for 1000 requests per minute.
+        # So we need to pause when we have more requests then a 1000
+        currentMinute = dt.now().minute
+        if self.requestNumber < self.throttleLimit:
+            if self.requestMinute == currentMinute:
+                self.requestNumber += 1
+                #logging.debug(f'Request number ({self.requestMinute}): {self.requestNumber} ')
+            else:
+                # another minute has passed, so we can eset the throttleNumber
+                self.requestMinute = currentMinute
+                self.requestNumber = 0
+                #loging.debug(f'Reset request number ({self.requestMinute}): {self.requestNumber} ')
+        else:
+            # we have reached the throttle threshold so we have to wait for the next minute
+            logging.warning("Throttling to prevent the requests per minute limit error of the Atlassian REST API. Reduce the number of threads to prevent this.")
+            while self.requestMinute == currentMinute:
+                time.sleep(1)
+                currentMinute = dt.now().minute
+            self.requestNumber = 0
+        return
+    
     def insightGet(self, query):
         logging.debug("insightGet")
         try:
+            self.throttleTest()
             result = requests.get(query, headers=self.headers)
             return result.json()
         except Exception as e:
@@ -59,6 +87,7 @@ class insightConnect():
         logging.debug("insightDelete")
         logging.debug(f"  {query}")
         try:
+            self.throttleTest()
             result = None
             if params:
                 result = requests.delete(query, params=params, headers=self.headers)
@@ -72,6 +101,7 @@ class insightConnect():
     def insightPut(self, query, data=None):
         logging.debug("insightPut")
         try:
+            self.throttleTest()
             if data:
                 logging.debug(f"  {query}")
                 logging.debug(f"  {json.dumps(data)}")
@@ -89,6 +119,7 @@ class insightConnect():
         logging.debug(f"  {query}")
         logging.debug(f"  {json.dumps(data)}")
         try:
+            self.throttleTest()
             result =  requests.post(query, json=data, headers=self.headers)
             if result.text != '':
                 return result.json()
